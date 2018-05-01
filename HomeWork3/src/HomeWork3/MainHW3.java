@@ -64,7 +64,7 @@ public class MainHW3 {
 						Knn knn = new Knn();
 						knn.setK(k);
 						knn.setP(p);
-						knn.setWeightingScheme(weightingScheme);
+						//knn.setWeightingScheme(weightingScheme);
 						// train 10 times, each time with on other validation set
 						currentCombinationAvgError = getCurrentCombinationError(arr, knn, num_of_folds, null);
 						if (currentCombinationAvgError < bestError) {
@@ -105,7 +105,7 @@ public class MainHW3 {
 			knn = new Knn();
 			knn.setK(bestHyperParameteres[0]);
 			knn.setP(bestHyperParameteres[1]);
-			knn.setWeightingScheme(bestHyperParameteres[2]);
+			//knn.setWeightingScheme(bestHyperParameteres[2]);
 			currentCombinationAvgError = getCurrentCombinationError(arr, knn, num_of_folds, avgFold);
 			System.out.println("--------------------------------");
 			System.out.println("Results for " + num_of_folds + " folds:");
@@ -114,7 +114,7 @@ public class MainHW3 {
 					+ " and the average elapsed time is " + avgFold[0]);
 			System.out.println("The total elapsed time is: " + avgFold[1] + "\n");
 
-			knn.distEffCheck = true;
+		//	knn.distEffCheck = true;
 			currentCombinationAvgError = getCurrentCombinationError(arr, knn, num_of_folds, avgFold);
 			System.out.println("Cross validation error of efficient knn on auto_price dataset is " + currentCombinationAvgError
 					+ " and the average elapsed time is " + avgFold[0]);
