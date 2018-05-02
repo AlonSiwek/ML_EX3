@@ -30,8 +30,13 @@ class DistantInstance{
 class DistanceCalculator {
     int p;
     double thresholdDistance;
-    boolean efficiency = false;
+    boolean efficiency;
 
+    public DistanceCalculator(int p, boolean efficiency){
+        this.p = p;
+        this.efficiency = efficiency;
+        thresholdDistance = Double.MAX_VALUE;
+    }
 
     /**
      * We leave it up to you whether you want the distance method to get all relevant
@@ -41,9 +46,15 @@ class DistanceCalculator {
 
         //check whether we calculate efficiency or not and calculate accordindgly
         if (p == Integer.MAX_VALUE) {
+            if(efficiency){
+               return efficientLInfinityDistance(one, two);
+            }
             return lInfinityDistance(one, two);
         }
 
+        if(efficiency){
+            return efficientLpDisatnce(one, two);
+        }
         return lpDistance(one, two);
     }
 
@@ -59,9 +70,7 @@ class DistanceCalculator {
         for (int i = 0; i < one.numAttributes() - 1; i++) {
             distance += Math.pow(Math.abs(one.value(i) - two.value(i)), p);
         }
-
         distance = Math.pow(distance, (1.0 / p));
-
         return distance;
     }
 
@@ -94,10 +103,11 @@ class DistanceCalculator {
         //sumerize the distances of the dimension of the vector
         for (int i = 0; i < one.numAttributes() - 1; i++) {
             distance += Math.pow(Math.abs(one.value(i) - two.value(i)), p);
+            if(distance > thresholdDistance){
+                break;
+            }
         }
-
         distance = Math.pow(distance, (1.0 / p));
-
         return distance;
     }
 
@@ -113,16 +123,17 @@ class DistanceCalculator {
         for (int i = 0; i < one.numAttributes() - 1; i++){
             if (Math.abs((one.value(i) - two.value(i))) > 0)
                 distance = Math.abs((one.value(i) - two.value(i)));
-            if (distance > neighborDistance)
+            if(distance > thresholdDistance){
                 break;
-        }
-
+            }
+        } 
         return distance;
     }
 }
 
 public class Knn implements Classifier {
     private Instances data;
+    private boolean efficiency;
     private boolean weighting;
     private int k;
     private int p;
@@ -142,7 +153,7 @@ public class Knn implements Classifier {
      * @param instances
      */
     public void buildClassifier(Instances instances) throws Exception {
-//        data = instances;
+       data = instances;
     }
 
 
@@ -230,7 +241,7 @@ public class Knn implements Classifier {
     public PriorityQueue<DistantInstance> findNearestNeighbors(Instance instance) {
         Comparator<DistantInstance> comparator = new DistanceComperator();
         PriorityQueue<DistantInstance> queue = new PriorityQueue<>(0, comparator);
-        DistanceCalculator distanceCalculator = new DistanceCalculator();
+        DistanceCalculator distanceCalculator = new DistanceCalculator(p, efficiency);
         DistantInstance currDistantInstance;
         double currDistance;
         double threshold;
@@ -279,29 +290,24 @@ public class Knn implements Classifier {
         DistantInstance distantInstance;
         double distance;
         Instance instance;
-        double numerator = 0;
-        double denominator = 0;
-        double wi;
+        double sumOfWeightedValues = 0;
+        double sumOfWeights = 0;
+        double weight;
 
-        //TODO verify correctness
         while (!queue.isEmpty()) {
             distantInstance = queue.poll();
             instance = distantInstance.instance;
             distance = distantInstance.distance;
 
-            if (distance == 0) {
-                return instance.classValue();
+            if (Math.pow(distance, 2) != 0) {
+                weight = Math.pow(distance, -2);
             }
 
-            wi = 1.0 / (Math.pow(distance, 2));
-            if (wi > 0) {
-                numerator += wi * instance.value(data.classIndex());
-                denominator += wi;
-            }
+            sumOfWeightedValues += weight * instance.classValue();
+            sumOfWeights += weight;  
         }
-
-
-        return (numerator/denominator);
+        
+        return (sumOfWeightedValues / sumOfWeights);
     }
 
     @Override
