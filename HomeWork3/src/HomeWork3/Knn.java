@@ -32,10 +32,6 @@ class DistanceCalculator {
     double thresholdDistance;
     boolean efficiency = false;
 
-/* TODO: setP/ constructor  -- if setP then use in Knn and throughout code.
-    * TODO  use threshold and see if efficient methods can be removed
-    */
-
 
     /**
      * We leave it up to you whether you want the distance method to get all relevant
@@ -95,18 +91,12 @@ class DistanceCalculator {
     private double efficientLpDisatnce(Instance one, Instance two, int p, double neighborDistance) {
         double distance = 0;
 
-        for (int i = 0; i < one.numAttributes() - 1; i++){
+        //sumerize the distances of the dimension of the vector
+        for (int i = 0; i < one.numAttributes() - 1; i++) {
             distance += Math.pow(Math.abs(one.value(i) - two.value(i)), p);
-            if (distance > Math.pow(neighborDistance, p))
-                break;
         }
 
-        if (p <= 3){
-            if (p == 2)
-                distance = Math.sqrt(distance);
-            if (p == 3)
-                distance = Math.cbrt(distance);
-        }
+        distance = Math.pow(distance, (1.0 / p));
 
         return distance;
     }
@@ -121,8 +111,8 @@ class DistanceCalculator {
         double distance = 0;
 
         for (int i = 0; i < one.numAttributes() - 1; i++){
-            if (Math.abs((one.value(i)-two.value(i))) > 0)
-                distance = Math.abs((one.value(i)-two.value(i)));
+            if (Math.abs((one.value(i) - two.value(i))) > 0)
+                distance = Math.abs((one.value(i) - two.value(i)));
             if (distance > neighborDistance)
                 break;
         }
@@ -137,7 +127,12 @@ public class Knn implements Classifier {
     private int k;
     private int p;
 
-    //    TODO: constructor for all members
+    Knn (int k, int p, boolean weighting){
+        this.k = k;
+        this.p = p;
+        this.weighting = weighting;
+    }
+
 
 
     @Override
@@ -189,9 +184,32 @@ public class Knn implements Classifier {
      * @param num_of_folds The number of folds to use.
      * @return The cross validation error.
      */
-    public double crossValidationError(Instances instances, int num_of_folds){
-        //TODO : implement
-        return 0.0 ;//calcAvgError(arr[validationIndex]);
+    public double crossValidationError(Instances instances, int num_of_folds)
+    {
+        double crossValidaionError = 0;
+        Instances [] instancesArray = new Instances[num_of_folds];
+
+        // shuffle the given data
+        instances.randomize(new Random());
+
+        // Initialize the instances folds
+        for (int i = 0; i < instancesArray.length; i++)        {
+            instancesArray[i] = new Instances(instances, instances.size());
+        }
+
+        // Fill the folds with the given instances
+        for (int i = 0; i < instances.size(); i++)        {
+            instancesArray[i % num_of_folds].add(instances.instance(i));
+        }
+
+        // Loop over all folds and calculate the avg cross validation error
+        // Each time validate with a different fold
+        for (int i = 0; i < num_of_folds; i++)        {
+            // Validate using the left out validation fold
+            crossValidaionError += calcAvgError(instancesArray[i]);
+        }
+
+        return crossValidaionError / num_of_folds;
     }
 
 
