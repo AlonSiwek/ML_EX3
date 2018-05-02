@@ -186,30 +186,40 @@ public class Knn implements Classifier {
      */
     public double crossValidationError(Instances instances, int num_of_folds)
     {
-        double crossValidaionError = 0;
+        double crossValidationError = 0;
         Instances [] instancesArray = new Instances[num_of_folds];
 
         // shuffle the given data
         instances.randomize(new Random());
 
         // Initialize the instances folds
-        for (int i = 0; i < instancesArray.length; i++)        {
+        for (int i = 0; i < instancesArray.length; i++) {
             instancesArray[i] = new Instances(instances, instances.size());
         }
 
         // Fill the folds with the given instances
-        for (int i = 0; i < instances.size(); i++)        {
+        for (int i = 0; i < instances.size(); i++) {
             instancesArray[i % num_of_folds].add(instances.instance(i));
         }
 
         // Loop over all folds and calculate the avg cross validation error
         // Each time validate with a different fold
-        for (int i = 0; i < num_of_folds; i++)        {
+        for (int i = 0; i < num_of_folds; i++) {
+            Instances currTrainingData = new Instances(instances, 0);
+            for (int j = 0; j < num_of_folds; j++){
+                 if (j != i){
+                     for (Instance instance : instancesArray[j]) {
+                         currTrainingData.add(instance);
+                     }
+                 }
+            }
+            // Set training data
+            data = currTrainingData;
             // Validate using the left out validation fold
-            crossValidaionError += calcAvgError(instancesArray[i]);
+            crossValidationError += calcAvgError(instancesArray[i]);
         }
 
-        return crossValidaionError / num_of_folds;
+        return crossValidationError / num_of_folds;
     }
 
 
