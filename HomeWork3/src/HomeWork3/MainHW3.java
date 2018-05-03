@@ -36,7 +36,8 @@ public class MainHW3 {
 
 		/** the diff in validation error of regular and efficient with the same fold
 		 is tiny and negligible, the cause is probably the long/order of double calculations **/
-		tryAllCombinations(trainData);
+//		tryAllCombinations(trainData);
+		printFoldMessages(trainData);
 	}
 
 	private static void tryAllCombinations(Instances trainData) throws Exception
@@ -61,10 +62,8 @@ public class MainHW3 {
 				for (int p = 1; p <= 4; p++) {
 					for (int weightingScheme = 0; weightingScheme < 2; weightingScheme++) {
 						// checking current combination
-						Knn knn = new Knn();
-						knn.setK(k);
-						knn.setP(p);
-						//knn.setWeightingScheme(weightingScheme);
+						Knn knn = new Knn(k, p, true);
+						knn.buildClassifier(trainData);
 						// train 10 times, each time with on other validation set
 						currentCombinationAvgError = getCurrentCombinationError(arr, knn, num_of_folds, null);
 						if (currentCombinationAvgError < bestError) {
@@ -91,34 +90,34 @@ public class MainHW3 {
 
 	private static void printFoldMessages(Instances trainData) throws Exception
 	{
-		Instances[] arr = null;
+		//Instances[] arr = null;
 		int[] numOfFolds = {trainData.size(), 50, 10, 5, 3};
 		int num_of_folds;
-		double currentCombinationAvgError;
 		Knn knn;
 		long[] avgFold = new long[2];
 
 		for(int i = 0; i < numOfFolds.length; i++)
 		{
 			num_of_folds = numOfFolds[i];
-			arr = divideTrainData(trainData,num_of_folds);
-			knn = new Knn();
-			knn.setK(bestHyperParameteres[0]);
-			knn.setP(bestHyperParameteres[1]);
-			//knn.setWeightingScheme(bestHyperParameteres[2]);
-			currentCombinationAvgError = getCurrentCombinationError(arr, knn, num_of_folds, avgFold);
-			System.out.println("--------------------------------");
-			System.out.println("Results for " + num_of_folds + " folds:");
-			System.out.println("--------------------------------");
-			System.out.println("Cross validation error of regular knn on auto_price dataset is " + currentCombinationAvgError
-					+ " and the average elapsed time is " + avgFold[0]);
-			System.out.println("The total elapsed time is: " + avgFold[1] + "\n");
+			knn = new Knn(bestHyperParameteres[0], 2, false);
+			knn.buildClassifier(trainData);
+			double crossValidationError = knn.crossValidationError(trainData,num_of_folds);
 
-		//	knn.distEffCheck = true;
-			currentCombinationAvgError = getCurrentCombinationError(arr, knn, num_of_folds, avgFold);
-			System.out.println("Cross validation error of efficient knn on auto_price dataset is " + currentCombinationAvgError
-					+ " and the average elapsed time is " + avgFold[0]);
-			System.out.println("The total elapsed time is: " + avgFold[1] + "\n");
+
+			//currentCombinationAvgError = getCurrentCombinationError(crossValidationError, knn, num_of_folds, avgFold);
+			System.out.println("--------------------------------" + "\n" +
+								"Results for " + num_of_folds + " folds:" +
+								"--------------------------------");
+			System.out.println("Cross validation error of regular knn on auto_price dataset is " + crossValidationError +
+								" and the average elapsed time is " + avgFold[0] + "\n" +
+								"The total elapsed time is: " + avgFold[1] + "\n");
+
+
+			//currentCombinationAvgError = getCurrentCombinationError(crossValidationError, knn, num_of_folds, avgFold);
+			System.out.println("Cross validation error of efficient knn on auto_price dataset is " + crossValidationError +
+								" and the average elapsed time is " + avgFold[0] + "\n" +
+								"The total elapsed time is: " + avgFold[1] + "\n");
+
 		}
 
 	}
@@ -186,5 +185,7 @@ public class MainHW3 {
 
 		return currentCombinationError/(double)num_of_folds;
 	}
+
+
 
 }
