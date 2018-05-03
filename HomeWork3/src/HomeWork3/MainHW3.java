@@ -8,8 +8,6 @@ import java.util.Random;
 import weka.core.Instances;
 
 public class MainHW3 {
-	private static int[] bestHyperParameteres;
-	private static double bestError;
 
 	public static BufferedReader readDataFile(String filename) {
 		BufferedReader inputReader = null;
@@ -40,53 +38,6 @@ public class MainHW3 {
 		printFoldMessages(trainData);
 	}
 
-	private static void tryAllCombinations(Instances trainData) throws Exception
-	{
-		HomeWork3.FeatureScaler fs = new HomeWork3.FeatureScaler();
-		double currentCombinationAvgError;
-		Instances[] arr = null;
-		int num_of_folds = 10;
-
-		// m = 0 for regular training data , m = 1 for scaled training data
-		for (int m = 0; m < 2; m++) {
-			bestHyperParameteres = new int[3];
-			bestError = Double.MAX_VALUE;
-			if (m == 1)
-			{
-				trainData = fs.scaleData(trainData); // SCALING DATA ONCE HERE
-			}
-
-			arr = divideTrainData(trainData, num_of_folds);
-			// iterate over all possible hyperparameters
-			for (int k = 1; k <= 20; k++) {
-				for (int p = 1; p <= 4; p++) {
-					for (int weightingScheme = 0; weightingScheme < 2; weightingScheme++) {
-						// checking current combination
-						Knn knn = new Knn(k, p, true);
-						knn.buildClassifier(trainData);
-						// train 10 times, each time with on other validation set
-						currentCombinationAvgError = getCurrentCombinationError(arr, knn, num_of_folds, null);
-						if (currentCombinationAvgError < bestError) {
-							bestError = currentCombinationAvgError;
-							bestHyperParameteres[0] = k;
-							bestHyperParameteres[1] = p;
-							bestHyperParameteres[2] = weightingScheme;
-						}
-					}
-				}
-			}
-			System.out.println("--------------------------------");
-			String dataSet = m == 0 ? "original" : "scaled";
-			String majorityFunction = bestHyperParameteres[2] == 0 ? "uniform" : "weighted";
-			System.out.println("Results for " + dataSet + " dataset: ");
-			System.out.println("--------------------------------");
-			System.out.println("Cross validation error with K = " + bestHyperParameteres[0]
-					+ ", lp = " + bestHyperParameteres[1] + ", majority function = "
-					+ majorityFunction + " for auto_price data is: " + bestError + "\n");
-		}
-
-		printFoldMessages(trainData);
-	}
 
 	private static void printFoldMessages(Instances trainData) throws Exception
 	{
@@ -96,96 +47,33 @@ public class MainHW3 {
 		Knn knn;
 		long[] avgFold = new long[2];
 
-		for(int i = 0; i < numOfFolds.length; i++)
-		{
-			num_of_folds = numOfFolds[i];
-			knn = new Knn(bestHyperParameteres[0], 2, false);
-			knn.buildClassifier(trainData);
-			double crossValidationError = knn.crossValidationError(trainData,num_of_folds);
+//		for(int i = 0; i < numOfFolds.length; i++)
+//		{
+//			num_of_folds = numOfFolds[i];
+//			knn = new Knn(bestHyperParameteres[0], 2, false);
+//			knn.buildClassifier(trainData);
+//			double crossValidationError = knn.crossValidationError(trainData,num_of_folds);
+//
+//
+//			System.out.println("--------------------------------" + "\n" +
+//								"Results for " + num_of_folds + " folds:" +
+//								"--------------------------------");
+//			System.out.println("Cross validation error of regular knn on auto_price dataset is " + crossValidationError +
+//								" and the average elapsed time is " + avgFold[0] + "\n" +
+//								"The total elapsed time is: " + avgFold[1] + "\n");
+//
+//
+//			System.out.println("Cross validation error of efficient knn on auto_price dataset is " + crossValidationError +
+//								" and the average elapsed time is " + avgFold[0] + "\n" +
+//								"The total elapsed time is: " + avgFold[1] + "\n");
+//
+//		}
+
+		knn = new Knn(4,1, false, true);
+		System.out.println(knn.crossValidationError(trainData, 10));
 
 
-			//currentCombinationAvgError = getCurrentCombinationError(crossValidationError, knn, num_of_folds, avgFold);
-			System.out.println("--------------------------------" + "\n" +
-								"Results for " + num_of_folds + " folds:" +
-								"--------------------------------");
-			System.out.println("Cross validation error of regular knn on auto_price dataset is " + crossValidationError +
-								" and the average elapsed time is " + avgFold[0] + "\n" +
-								"The total elapsed time is: " + avgFold[1] + "\n");
-
-
-			//currentCombinationAvgError = getCurrentCombinationError(crossValidationError, knn, num_of_folds, avgFold);
-			System.out.println("Cross validation error of efficient knn on auto_price dataset is " + crossValidationError +
-								" and the average elapsed time is " + avgFold[0] + "\n" +
-								"The total elapsed time is: " + avgFold[1] + "\n");
-
-		}
 
 	}
-
-	private static Instances createTrainingData(Instances[] arr, int j)
-	{
-		Instances data = new Instances(arr[0],0, 0);
-		for (int i = 0; i < arr.length; i++)
-		{
-			if (i != j)
-			{
-				for (int k = 0; k < arr[i].size(); k++)
-				{
-					data.add(arr[i].instance(k));
-				}
-			}
-		}
-
-		return data;
-	}
-
-	private static Instances[] divideTrainData(Instances data, int foldNumber)
-	{
-		Instances[] arr = new Instances[foldNumber];
-		int partitionSize = data.size() / foldNumber;
-		int j = 0;
-		for (int i = 0; i < foldNumber; i++)
-		{
-			arr[i] = new Instances(data, j, partitionSize);
-			j += partitionSize;
-		}
-
-		// if there is leftovers
-		int leftovers = data.size()-j;
-		for (int k = 0; k < leftovers; k++)
-		{
-			arr[k].add(data.instance(j++));
-		}
-
-		return arr;
-	}
-
-	private static double getCurrentCombinationError(Instances[] arr, Knn knn, int num_of_folds, long[] avgFold) throws Exception
-	{
-		double currentCombinationError = 0;
-		long time;
-		long timeOfSingleFold;
-		long timeOfAvgFold = 0;
-		for (int i = 0; i < num_of_folds; i++)
-		{
-			Instances validationData = arr[i];
-			Instances trainingData = createTrainingData(arr, i);
-			knn.buildClassifier(trainingData);
-			// get the error of current train
-			time = System.nanoTime();
-			currentCombinationError += knn.crossValidationError(arr,num_of_folds,i);
-			timeOfSingleFold = System.nanoTime() - time;
-			timeOfAvgFold += timeOfSingleFold;
-		}
-		if (avgFold != null)
-		{
-			avgFold[0] = timeOfAvgFold / num_of_folds;
-			avgFold[1] = timeOfAvgFold;
-		}
-
-		return currentCombinationError/(double)num_of_folds;
-	}
-
-
 
 }

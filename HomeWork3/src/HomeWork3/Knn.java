@@ -97,7 +97,7 @@ class DistanceCalculator {
      * @param two
      * @return
      */
-    private double efficientLpDisatnce(Instance one, Instance two, int p, double neighborDistance) {
+    private double efficientLpDisatnce(Instance one, Instance two) {
         double distance = 0;
 
         //sumerize the distances of the dimension of the vector
@@ -117,7 +117,7 @@ class DistanceCalculator {
      * @param two
      * @return
      */
-    private double efficientLInfinityDistance(Instance one, Instance two, double neighborDistance) {
+    private double efficientLInfinityDistance(Instance one, Instance two) {
         double distance = 0;
 
         for (int i = 0; i < one.numAttributes() - 1; i++){
@@ -138,10 +138,11 @@ public class Knn implements Classifier {
     private int k;
     private int p;
 
-    Knn (int k, int p, boolean weighting){
+    Knn (int k, int p, boolean weighting, boolean efficiency){
         this.k = k;
         this.p = p;
         this.weighting = weighting;
+        this.efficiency = efficiency;
     }
 
 
@@ -240,7 +241,7 @@ public class Knn implements Classifier {
      */
     public PriorityQueue<DistantInstance> findNearestNeighbors(Instance instance) {
         Comparator<DistantInstance> comparator = new DistanceComperator();
-        PriorityQueue<DistantInstance> queue = new PriorityQueue<>(0, comparator);
+        PriorityQueue<DistantInstance> queue = new PriorityQueue<DistantInstance>(k, comparator);
         DistanceCalculator distanceCalculator = new DistanceCalculator(p, efficiency);
         DistantInstance currDistantInstance;
         double currDistance;
@@ -292,7 +293,7 @@ public class Knn implements Classifier {
         Instance instance;
         double sumOfWeightedValues = 0;
         double sumOfWeights = 0;
-        double weight;
+        double weight = 0;
 
         while (!queue.isEmpty()) {
             distantInstance = queue.poll();
