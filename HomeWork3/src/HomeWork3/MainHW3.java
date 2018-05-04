@@ -45,6 +45,7 @@ public class MainHW3 {
 		int[] numOfFolds = {trainData.size(), 50, 10, 5, 3};
 		int num_of_folds;
 		Knn knn;
+		DistanceCalculator distanceCalculator;
 		long[] avgFold = new long[2];
 
 //		for(int i = 0; i < numOfFolds.length; i++)
@@ -69,7 +70,8 @@ public class MainHW3 {
 //
 //		}
 
-		knn = new Knn(4,1, true, true);
+		distanceCalculator = new DistanceCalculator(1, true);
+		knn = new Knn(3,false, distanceCalculator);
 		System.out.println(knn.crossValidationError(trainData, 10));
 
 

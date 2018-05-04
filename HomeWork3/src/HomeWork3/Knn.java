@@ -26,6 +26,8 @@ class DistantInstance{
         this.instance = instance;
     }
 }
+
+
 class DistanceCalculator {
     int p;
     double thresholdDistance;
@@ -34,7 +36,6 @@ class DistanceCalculator {
     public DistanceCalculator(int p, boolean efficiency){
         this.p = p;
         this.efficiency = efficiency;
-        thresholdDistance = Double.MAX_VALUE;
     }
 
     /**
@@ -78,14 +79,17 @@ class DistanceCalculator {
      * @return
      */
     private double lInfinityDistance(Instance one, Instance two) {
-        double distance = 0;
+        double currDistance;
+        double maxDistance = 0;
 
         //check the max distance
         for (int i = 0; i < one.numAttributes() - 1; i++){
-            if (Math.abs((one.value(i) - two.value(i))) > 0)
-                distance = Math.abs((one.value(i) - two.value(i)));
+            currDistance = Math.abs((one.value(i) - two.value(i)));
+            if (currDistance > maxDistance){
+                maxDistance = currDistance;
+            }
         }
-        return distance;
+        return maxDistance;
     }
 
     /**
@@ -99,7 +103,7 @@ class DistanceCalculator {
 
         for (int i = 0; i < one.numAttributes() - 1; i++) {
             distance += Math.pow(Math.abs(one.value(i) - two.value(i)), p);
-            if(distance > thresholdDistance){
+            if(distance > Math.pow(thresholdDistance, p)){
                 break;
             }
         }
@@ -114,31 +118,38 @@ class DistanceCalculator {
      * @return
      */
     private double efficientLInfinityDistance(Instance one, Instance two) {
-        double distance = 0;
+        double currDistance;
+        double maxDistance = 0;
 
-        for (int i = 0; i < one.numAttributes() - 1; i++){
-            if (Math.abs((one.value(i) - two.value(i))) > 0)
-                distance = Math.abs((one.value(i) - two.value(i)));
-            if(distance > thresholdDistance){
+        //check the max distance
+        for (int i = 0; i < one.numAttributes() - 1; i++) {
+            currDistance = Math.abs((one.value(i) - two.value(i)));
+            if (currDistance > maxDistance) {
+                maxDistance = currDistance;
+            }
+
+            if (maxDistance > thresholdDistance) {
                 break;
             }
-        } 
-        return distance;
+        }
+        return maxDistance;
+    }
+
+    public void resetThresholdDistance(){
+        thresholdDistance = Double.MAX_VALUE;
     }
 }
 
 public class Knn implements Classifier {
     private Instances data;
-    private boolean efficiency;
+    private DistanceCalculator distanceCalculator;
     private boolean weighting;
     private int k;
-    private int p;
 
-    Knn (int k, int p, boolean weighting, boolean efficiency){
+    Knn (int k, boolean weighting, DistanceCalculator distanceCalculator){
         this.k = k;
-        this.p = p;
         this.weighting = weighting;
-        this.efficiency = efficiency;
+        this.distanceCalculator = distanceCalculator;
     }
 
 
@@ -228,21 +239,20 @@ public class Knn implements Classifier {
      */
     public PriorityQueue<DistantInstance> findNearestNeighbors(Instance instance) {
         Comparator<DistantInstance> comparator = new DistanceComparator();
-        PriorityQueue<DistantInstance> queue = new PriorityQueue<DistantInstance>(k, comparator);
-        DistanceCalculator distanceCalculator = new DistanceCalculator(p, efficiency);
+        PriorityQueue<DistantInstance> queue = new PriorityQueue<>(k, comparator);
         DistantInstance currDistantInstance;
         double currDistance;
         double threshold;
+        int i = 0;
 
+        distanceCalculator.resetThresholdDistance();
         for (Instance currInstance : data) {
             currDistance = distanceCalculator.distance(instance, currInstance);
             currDistantInstance = new DistantInstance(currDistance, currInstance);
 
-            if(queue.size() < k){
+            if(i < k){
                 queue.add(currDistantInstance);
-            }
-
-            if(queue.size() == k) {
+            } else {
                 threshold = queue.peek().distance;
                 distanceCalculator.thresholdDistance = threshold;
                 if(currDistance < threshold){
@@ -250,12 +260,14 @@ public class Knn implements Classifier {
                     queue.add(currDistantInstance);
                 }
             }
+
+            i++;
         }
         return queue;
     }
 
     /**
-     * Cacluates the average value of the given elements in the collection.
+     * Calculates the average value of the given elements in the collection.
      * @param
      * @return
      */
