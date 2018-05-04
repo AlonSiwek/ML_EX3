@@ -208,9 +208,6 @@ public class Knn implements Classifier {
         Instances currTrainingData;
         Instances currValidationData;
 
-        // shuffle the given data
-        instances.randomize(new Random());
-
 
         for (int i = 0; i < num_of_folds; i++) {
             currTrainingData = new Instances(instances,0);

@@ -29,53 +29,36 @@ public class MainHW3 {
 	}
 
 	public static void main(String[] args) throws Exception {
-		Instances trainData = loadData("auto_price.txt");
-		trainData.randomize(new Random()); // shuffle data ONCE !
-
-		/** the diff in validation error of regular and efficient with the same fold
-		 is tiny and negligible, the cause is probably the long/order of double calculations **/
-//		tryAllCombinations(trainData);
-		printFoldMessages(trainData);
-	}
-
-
-	private static void printFoldMessages(Instances trainData) throws Exception
-	{
-		//Instances[] arr = null;
-		int[] numOfFolds = {trainData.size(), 50, 10, 5, 3};
-		int num_of_folds;
 		Knn knn;
 		DistanceCalculator distanceCalculator;
-		long[] avgFold = new long[2];
+		Instances trainData = loadData("auto_price.txt");
 
-//		for(int i = 0; i < numOfFolds.length; i++)
-//		{
-//			num_of_folds = numOfFolds[i];
-//			knn = new Knn(bestHyperParameteres[0], 2, false);
-//			knn.buildClassifier(trainData);
-//			double crossValidationError = knn.crossValidationError(trainData,num_of_folds);
-//
-//
-//			System.out.println("--------------------------------" + "\n" +
-//								"Results for " + num_of_folds + " folds:" +
-//								"--------------------------------");
-//			System.out.println("Cross validation error of regular knn on auto_price dataset is " + crossValidationError +
-//								" and the average elapsed time is " + avgFold[0] + "\n" +
-//								"The total elapsed time is: " + avgFold[1] + "\n");
-//
-//
-//			System.out.println("Cross validation error of efficient knn on auto_price dataset is " + crossValidationError +
-//								" and the average elapsed time is " + avgFold[0] + "\n" +
-//								"The total elapsed time is: " + avgFold[1] + "\n");
-//
-//		}
+		// shuffle data for cross validation
+		trainData.randomize(new Random());
 
-		distanceCalculator = new DistanceCalculator(1, true);
-		knn = new Knn(3,false, distanceCalculator);
+		int[] pArray = {1,2,3,Integer.MAX_VALUE};
+
+		for (int k = 1; k <= 20; k++) {
+			for (int p : pArray) {
+				for (int j = 0; j < 2; j++) {
+					boolean weighting = (j % 2 == 0);
+					distanceCalculator = new DistanceCalculator(p, false);
+
+					knn = new Knn(k, weighting, distanceCalculator);
+//					System.out.println(knn.crossValidationError(trainData, 10));
+				}
+			}
+		}
+		
+		int[] numOfFolds = {trainData.size(), 50, 10, 5, 3};
+
+		distanceCalculator = new DistanceCalculator(1, false);
+
+		knn = new Knn(1, true, distanceCalculator);
 		System.out.println(knn.crossValidationError(trainData, 10));
 
 
-
 	}
+
 
 }
