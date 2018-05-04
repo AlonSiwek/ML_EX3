@@ -69,7 +69,7 @@ public class MainHW3 {
 //
 //		}
 
-		knn = new Knn(4,1, false, true);
+		knn = new Knn(4,1, true, true);
 		System.out.println(knn.crossValidationError(trainData, 10));
 
 

@@ -4,17 +4,16 @@ import weka.core.Capabilities;
 import weka.core.Instance;
 import weka.core.Instances;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 import java.util.Comparator;
 
-class DistanceComperator implements Comparator<DistantInstance> {
+class DistanceComparator implements Comparator<DistantInstance> {
 
     @Override
     public int compare(DistantInstance x, DistantInstance y)
     {
-        return (x.distance > y.distance) ? 1 : -1;
+        return (x.distance > y.distance) ? -1 : 1;
     }
 }
 
@@ -44,7 +43,6 @@ class DistanceCalculator {
      */
     public double distance (Instance one, Instance two) {
 
-        //check whether we calculate efficiency or not and calculate accordindgly
         if (p == Integer.MAX_VALUE) {
             if(efficiency){
                return efficientLInfinityDistance(one, two);
@@ -53,7 +51,7 @@ class DistanceCalculator {
         }
 
         if(efficiency){
-            return efficientLpDisatnce(one, two);
+            return efficientLpDistance(one, two);
         }
         return lpDistance(one, two);
     }
@@ -66,7 +64,6 @@ class DistanceCalculator {
     private double lpDistance(Instance one, Instance two) {
          double distance = 0;
 
-        //sumerize the distances of the dimension of the vector
         for (int i = 0; i < one.numAttributes() - 1; i++) {
             distance += Math.pow(Math.abs(one.value(i) - two.value(i)), p);
         }
@@ -97,10 +94,9 @@ class DistanceCalculator {
      * @param two
      * @return
      */
-    private double efficientLpDisatnce(Instance one, Instance two) {
+    private double efficientLpDistance(Instance one, Instance two) {
         double distance = 0;
 
-        //sumerize the distances of the dimension of the vector
         for (int i = 0; i < one.numAttributes() - 1; i++) {
             distance += Math.pow(Math.abs(one.value(i) - two.value(i)), p);
             if(distance > thresholdDistance){
@@ -167,10 +163,9 @@ public class Knn implements Classifier {
         PriorityQueue<DistantInstance> queue = findNearestNeighbors(instance);
 
         if (weighting) {
-            return getAverageValue(queue);
+            return getWeightedAverageValue(queue);
         }
-
-        return getWeightedAverageValue(queue);
+        return getAverageValue(queue);
     }
 
     /**
@@ -199,36 +194,28 @@ public class Knn implements Classifier {
     public double crossValidationError(Instances instances, int num_of_folds)
     {
         double crossValidationError = 0;
-        Instances [] instancesArray = new Instances[num_of_folds];
+        Instances currTrainingData;
+        Instances currValidationData;
 
         // shuffle the given data
         instances.randomize(new Random());
 
-        // Initialize the instances folds
-        for (int i = 0; i < instancesArray.length; i++) {
-            instancesArray[i] = new Instances(instances, instances.size());
-        }
 
-        // Fill the folds with the given instances
-        for (int i = 0; i < instances.size(); i++) {
-            instancesArray[i % num_of_folds].add(instances.instance(i));
-        }
-
-        // Loop over all folds and calculate the avg cross validation error
-        // Each time validate with a different fold
         for (int i = 0; i < num_of_folds; i++) {
-            Instances currTrainingData = new Instances(instances, 0);
-            for (int j = 0; j < num_of_folds; j++){
-                 if (j != i){
-                     for (Instance instance : instancesArray[j]) {
-                         currTrainingData.add(instance);
-                     }
-                 }
+            currTrainingData = new Instances(instances,0);
+            currValidationData = new Instances(instances,0);
+
+            // separate data into training and validation
+            for (int j = 0; j < instances.size(); j++) {
+                if(j % num_of_folds == i){
+                    currValidationData.add(instances.instance(j));
+                } else {
+                    currTrainingData.add(instances.instance(j));
+                }
             }
-            // Set training data
+            
             data = currTrainingData;
-            // Validate using the left out validation fold
-            crossValidationError += calcAvgError(instancesArray[i]);
+            crossValidationError += calcAvgError(currValidationData);
         }
 
         return crossValidationError / num_of_folds;
@@ -240,7 +227,7 @@ public class Knn implements Classifier {
      * @param instance
      */
     public PriorityQueue<DistantInstance> findNearestNeighbors(Instance instance) {
-        Comparator<DistantInstance> comparator = new DistanceComperator();
+        Comparator<DistantInstance> comparator = new DistanceComparator();
         PriorityQueue<DistantInstance> queue = new PriorityQueue<DistantInstance>(k, comparator);
         DistanceCalculator distanceCalculator = new DistanceCalculator(p, efficiency);
         DistantInstance currDistantInstance;
@@ -300,10 +287,8 @@ public class Knn implements Classifier {
             instance = distantInstance.instance;
             distance = distantInstance.distance;
 
-            if (Math.pow(distance, 2) != 0) {
-                weight = Math.pow(distance, -2);
-            }
-
+            //avoid zero division
+            weight = (Math.pow(distance, 2) == 0) ? 0 : Math.pow(distance, -2);
             sumOfWeightedValues += weight * instance.classValue();
             sumOfWeights += weight;  
         }
