@@ -13,11 +13,9 @@ public class FeatureScaler {
 	 * @return A scaled instances object.
 	 */
 	public Instances scaleData(Instances instances) throws Exception {
-
 		Filter std = new Standardize();
 		std.setInputFormat(instances);
-		return Filter.useFilter(instances,std);
-
+		return Filter.useFilter(instances, std);
 	}
 
 

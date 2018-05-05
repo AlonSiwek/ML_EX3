@@ -289,7 +289,7 @@ public class Knn implements Classifier {
         Instance instance;
         double sumOfWeightedValues = 0;
         double sumOfWeights = 0;
-        double weight = 0;
+        double weight;
 
         while (!queue.isEmpty()) {
             distantInstance = queue.poll();
@@ -301,8 +301,8 @@ public class Knn implements Classifier {
             sumOfWeightedValues += weight * instance.classValue();
             sumOfWeights += weight;  
         }
-        
-        return (sumOfWeightedValues / sumOfWeights);
+
+        return (sumOfWeights == 0) ? 0 : sumOfWeightedValues / sumOfWeights;
     }
 
     @Override
