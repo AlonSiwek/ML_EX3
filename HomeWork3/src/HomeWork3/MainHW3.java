@@ -103,14 +103,40 @@ public class MainHW3 {
 				" for auto_price data is: " + minScaledDataErr);
 		System.out.println();
 
-
-		int[] numOfFolds = {originalData.size(), 50, 10, 5, 3};
-		// TODO iterate over nunOfFolds <yellow part of ex>
+///////////
 
 
+		int[] numOfFolds = {scaledData.size(), 50, 10, 5, 3};
+		boolean weightning = (scaledDataBestParams[2] == 0);
+		long pervTime = 0;
+		long timeElapsed = 0;
+		
+		DistanceCalculator efficientDistanceCalculator = new DistanceCalculator(scaledDataBestParams[1], true);
+		DistanceCalculator regulartDistanceCalculator = new DistanceCalculator(scaledDataBestParams[1], false);
 
+		Knn efficientKnn = new Knn(scaledDataBestParams[0], weightning, efficientDistanceCalculator);
+		Knn regulartKnn = new Knn(scaledDataBestParams[0], weightning, regulartDistanceCalculator);
 
+		for (int fold : numOfFolds) {
+
+			System.out.println("\n" + "\n" + "----------------------------");
+			System.out.println("Results for " + fold + " folds:");
+			System.out.println("----------------------------");
+			boolean efficiency = false;
+
+		 	pervTime = System.nanoTime();
+
+			// change name
+			currScaledDataErr = regulartKnn.crossValidationError(scaledData, fold);
+
+			timeElapsed = System.nanoTime() - pervTime;
+
+			System.out.println("Cross validation error of regular knn on auto_price dataset is:" + currScaledDataErr);
+
+			System.out.println("the average elapsed time is " + (timeElapsed / (float) fold));
+			System.out.println("The total elapsed time is: " + timeElapsed);
+			System.out.println();
+
+		}
 	}
-
-
 }
