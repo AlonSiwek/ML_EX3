@@ -146,6 +146,7 @@ public class Knn implements Classifier {
     private boolean weighting;
     private int k;
 
+    // class constructor
     Knn (int k, boolean weighting, DistanceCalculator distanceCalculator){
         this.k = k;
         this.weighting = weighting;
@@ -155,13 +156,9 @@ public class Knn implements Classifier {
 
 
     @Override
-    /**
-     * Build the knn classifier. In our case, simply stores the given instances for
-     * later use in the prediction.
-     * @param instances
+    /** mandatory override method that is not used
      */
     public void buildClassifier(Instances instances) throws Exception {
-       data = instances;
     }
 
 
@@ -188,26 +185,22 @@ public class Knn implements Classifier {
      */
     public double calcAvgError (Instances instances){
         double totalError = 0;
-
         for (Instance instance: instances) {
             totalError += Math.abs(instance.classValue() - regressionPrediction(instance));
         }
-
         return totalError / (double) instances.size();
     }
 
     /**
-     * Calculates the cross validation error, the average error on all folds.
-     * @param instances Instances used for the cross validation
+     * separates data into all separations to training and validation data for a given number of folds
+     * @param instances data to split
      * @param num_of_folds The number of folds to use.
-     * @return The cross validation error.
+     * @return a 2D-array of where each element represents a separation where the first (inner) element is training data and the second validation data
      */
-    public double crossValidationError(Instances instances, int num_of_folds)
-    {
-        double crossValidationError = 0;
+    public Instances[][] separateData(Instances instances, int num_of_folds){
+        Instances[][] res = new Instances[num_of_folds][2];
         Instances currTrainingData;
         Instances currValidationData;
-
 
         for (int i = 0; i < num_of_folds; i++) {
             currTrainingData = new Instances(instances,0);
@@ -221,11 +214,26 @@ public class Knn implements Classifier {
                     currTrainingData.add(instances.instance(j));
                 }
             }
-            
-            data = currTrainingData;
-            crossValidationError += calcAvgError(currValidationData);
+            res[i][0] = currTrainingData;
+            res[i][1] = currValidationData;
         }
+        return res;
+    }
 
+    /**
+     * Calculates the cross validation error, the average error on all folds.
+     * @param instances 2D-array of Instances the size of num_of_folds*2 where each element represents
+     *                 a separation where the first (inner) element is training data and the second validation data
+     * @param num_of_folds The number of folds to use.
+     * @return The cross validation error.
+     */
+    public double crossValidationError(Instances[][] instances, int num_of_folds)
+    {
+        double crossValidationError = 0;
+        for (int i = 0; i < num_of_folds; i++) {
+            data = instances[i][0];
+            crossValidationError += calcAvgError(instances[i][1]);
+        }
         return crossValidationError / num_of_folds;
     }
 

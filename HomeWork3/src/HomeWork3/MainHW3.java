@@ -32,22 +32,23 @@ public class MainHW3 {
 		Knn knn;
 		DistanceCalculator distanceCalculator;
 		int[] pArray = {1,2,3,Integer.MAX_VALUE};
-		int[] originalDataBestParams = new int[3];
-		int[] scaledDataBestParams = new int[3];
+		int[] originalDataBestParams = new int[3]; //{k,p,weighing}
+		int[] scaledDataBestParams = new int[3]; // {k,p,weighing}
 		double minOriginalDataErr = Double.MAX_VALUE;
 		double minScaledDataErr = Double.MAX_VALUE;
-		double currOriginalDataErr = Double.MAX_VALUE;
-		double currScaledDataErr = Double.MAX_VALUE;
+		double currOriginalDataErr;
+		double currScaledDataErr;
 		FeatureScaler featureScaler = new FeatureScaler();
 		Instances originalData = loadData("auto_price.txt");
 		Instances scaledData = featureScaler.scaleData(originalData);
+		Instances[][] separatedData;
 		String majorityFunction;
 
 		// shuffle data for cross validation
 		originalData.randomize(new Random());
 		scaledData.randomize(new Random());
 
-//		// iterate over num of neighbours
+		// iterate over num of neighbours
 		for (int k = 1; k <= 20; k++) {
 
 			// iterate over different p's for lp distance calcs
@@ -55,12 +56,13 @@ public class MainHW3 {
 
 				// toggle weighting method
 				for (int j = 0; j < 2; j++) {
-					boolean weighting = (j % 2 == 0);
+					boolean weighting = (j == 0);
 					distanceCalculator = new DistanceCalculator(p, false);
 					knn = new Knn(k, weighting, distanceCalculator);
 
 					// calculate cross validation avg error on original data and update hyper params if needed
-					currOriginalDataErr = knn.crossValidationError(originalData, 10);
+					separatedData = knn.separateData(originalData, 10);
+					currOriginalDataErr = knn.crossValidationError(separatedData, 10);
 
 					if (currOriginalDataErr < minOriginalDataErr) {
 						minOriginalDataErr = currOriginalDataErr;
@@ -70,7 +72,8 @@ public class MainHW3 {
 					}
 
 					// calculate cross validation avg error on scaled data and update hyper params if needed
-					currScaledDataErr = knn.crossValidationError(scaledData, 10);
+					separatedData = knn.separateData(scaledData, 10);
+					currScaledDataErr = knn.crossValidationError(separatedData, 10);
 					if (currScaledDataErr < minScaledDataErr) {
 						minScaledDataErr = currScaledDataErr;
 						scaledDataBestParams[0] = k;
@@ -103,40 +106,52 @@ public class MainHW3 {
 				" for auto_price data is: " + minScaledDataErr);
 		System.out.println();
 
-///////////
-
-
+		//time measurements
 		int[] numOfFolds = {scaledData.size(), 50, 10, 5, 3};
-		boolean weightning = (scaledDataBestParams[2] == 0);
-		long pervTime = 0;
-		long timeElapsed = 0;
-		
+		boolean weighting = (scaledDataBestParams[2] == 0);
+		long startTime;
+		long timeElapsed;
+		double error;
+
 		DistanceCalculator efficientDistanceCalculator = new DistanceCalculator(scaledDataBestParams[1], true);
 		DistanceCalculator regulartDistanceCalculator = new DistanceCalculator(scaledDataBestParams[1], false);
 
-		Knn efficientKnn = new Knn(scaledDataBestParams[0], weightning, efficientDistanceCalculator);
-		Knn regulartKnn = new Knn(scaledDataBestParams[0], weightning, regulartDistanceCalculator);
+		Knn efficientKnn = new Knn(scaledDataBestParams[0], weighting, efficientDistanceCalculator);
+		Knn regularKnn = new Knn(scaledDataBestParams[0], weighting, regulartDistanceCalculator);
 
-		for (int fold : numOfFolds) {
+		for (int folds : numOfFolds) {
 
-			System.out.println("\n" + "\n" + "----------------------------");
-			System.out.println("Results for " + fold + " folds:");
 			System.out.println("----------------------------");
-			boolean efficiency = false;
+			System.out.println("Results for " + folds + " folds:");
+			System.out.println("----------------------------");
 
-		 	pervTime = System.nanoTime();
+			// separate data
+			separatedData = regularKnn.separateData(scaledData, folds);
 
-			// change name
-			currScaledDataErr = regulartKnn.crossValidationError(scaledData, fold);
+			// measure time for regular prediction
+		 	startTime = System.nanoTime();
+			error = regularKnn.crossValidationError(separatedData, folds);
+			timeElapsed = System.nanoTime() - startTime;
 
-			timeElapsed = System.nanoTime() - pervTime;
-
-			System.out.println("Cross validation error of regular knn on auto_price dataset is:" + currScaledDataErr);
-
-			System.out.println("the average elapsed time is " + (timeElapsed / (float) fold));
+			// print results
+			System.out.println("Cross validation error of regular knn on auto_price dataset is:" + error);
+			System.out.println("the average elapsed time is " + (timeElapsed / ((float) folds)));
 			System.out.println("The total elapsed time is: " + timeElapsed);
 			System.out.println();
 
+			// separate data
+			separatedData = efficientKnn.separateData(scaledData, folds);
+
+			// measure time for efficient prediction
+			startTime = System.nanoTime();
+			error = efficientKnn.crossValidationError(separatedData, folds);
+			timeElapsed = System.nanoTime() - startTime;
+
+			// print results
+			System.out.println("Cross validation error of efficient knn on auto_price dataset is:" + error);
+			System.out.println("the average elapsed time is " + (timeElapsed / ((float) folds)));
+			System.out.println("The total elapsed time is: " + timeElapsed);
+			System.out.println();
 		}
 	}
 }
